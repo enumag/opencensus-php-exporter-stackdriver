@@ -20,22 +20,22 @@ namespace OpenCensus\Tests\Unit\Trace\Exporter;
 require_once __DIR__ . '/mock_error_log.php';
 
 use OpenCensus\Trace\Exporter\StackdriverExporter;
-use OpenCensus\Trace\SpanContext;
-use OpenCensus\Trace\Tracer\TracerInterface;
-use OpenCensus\Trace\Tracer\ContextTracer;
+use OpenCensus\Trace\SpanData;
 use OpenCensus\Trace\Span as OCSpan;
 use Prophecy\Argument;
 use Google\Cloud\Core\Batch\BatchRunner;
 use Google\Cloud\Trace\Trace;
-use Google\Cloud\Trace\Span;
 use Google\Cloud\Trace\TraceClient;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 
 /**
  * @group trace
  */
 class StackdriverExporterTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @var TraceClient
      */
@@ -46,7 +46,7 @@ class StackdriverExporterTest extends TestCase
      */
     private $spans;
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->client = $this->prophesize(TraceClient::class);
@@ -97,7 +97,7 @@ class StackdriverExporterTest extends TestCase
             $this->assertCount(1, $spans);
             $attributes = $spans[0]->info()['attributes']['attributeMap'];
             $this->assertArrayHasKey('g.co/agent', $attributes);
-            $this->assertRegexp('/\d+\.\d+\.\d+/', $attributes['g.co/agent']['stringValue']['value']);
+            $this->assertMatchesRegularExpression('/\d+\.\d+\.\d+/', $attributes['g.co/agent']['stringValue']['value']);
             return true;
         }))->shouldBeCalled();
         $this->client->trace('aaa')->willReturn($trace->reveal());

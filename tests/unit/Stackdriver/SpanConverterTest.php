@@ -23,7 +23,6 @@ use OpenCensus\Trace\Link as OCLink;
 use OpenCensus\Trace\MessageEvent as OCMessageEvent;
 use OpenCensus\Trace\Span as OCSpan;
 use OpenCensus\Trace\Status as OCStatus;
-use Prophecy\Argument;
 use Google\Cloud\Trace\Link;
 use Google\Cloud\Trace\MessageEvent;
 use Google\Cloud\Trace\Span;
@@ -36,25 +35,6 @@ class SpanConverterTest extends TestCase
 {
     const TIMESTAMP_FORMAT_REGEXP = '/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}Z/';
 
-    /**
-     * @var SpanData[]
-     */
-    private $spans;
-
-    public function setUp()
-    {
-        parent::setUp();
-        $this->spans = array_map(function ($span) {
-            return $span->spanData();
-        }, [
-            new OCSpan([
-                'name' => 'span',
-                'startTime' => microtime(true),
-                'endTime' => microtime(true) + 10
-            ])
-        ]);
-    }
-
     public function testFormatsTrace()
     {
         $span = new OCSpan([
@@ -65,11 +45,11 @@ class SpanConverterTest extends TestCase
         $span = SpanConverter::convertSpan($span->spanData());
 
         $this->assertInstanceOf(Span::class, $span);
-        $this->assertInternalType('string', $span->name());
-        $this->assertInternalType('string', $span->spanId());
+        $this->assertIsString($span->name());
+        $this->assertIsString($span->spanId());
         $this->assertNull($span->parentSpanId());
-        $this->assertRegExp(self::TIMESTAMP_FORMAT_REGEXP, $span->info()['startTime']);
-        $this->assertRegExp(self::TIMESTAMP_FORMAT_REGEXP, $span->info()['endTime']);
+        $this->assertMatchesRegularExpression(self::TIMESTAMP_FORMAT_REGEXP, $span->info()['startTime']);
+        $this->assertMatchesRegularExpression(self::TIMESTAMP_FORMAT_REGEXP, $span->info()['endTime']);
     }
 
     public function testSetSpanIds()
@@ -182,7 +162,7 @@ class SpanConverterTest extends TestCase
         $this->assertCount(2, $timeEvents);
         $event1 = $timeEvents[0];
         $this->assertEquals('some-description', $event1['annotation']['description']['value']);
-        $this->assertRegExp(self::TIMESTAMP_FORMAT_REGEXP, $event1['time']);
+        $this->assertMatchesRegularExpression(self::TIMESTAMP_FORMAT_REGEXP, $event1['time']);
         $this->assertEquals('2017-03-28T21:44:10.484299000Z', $event1['time']);
 
         $event2 = $timeEvents[1];
@@ -190,7 +170,7 @@ class SpanConverterTest extends TestCase
         $this->assertEquals('message-id', $event2['messageEvent']['id']);
         $this->assertEquals(234, $event2['messageEvent']['uncompressedSizeBytes']);
         $this->assertEquals(123, $event2['messageEvent']['compressedSizeBytes']);
-        $this->assertRegExp(self::TIMESTAMP_FORMAT_REGEXP, $event2['time']);
+        $this->assertMatchesRegularExpression(self::TIMESTAMP_FORMAT_REGEXP, $event2['time']);
         $this->assertEquals('2017-03-28T21:44:10.484299000Z', $event2['time']);
     }
 
